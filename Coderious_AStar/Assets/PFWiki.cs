@@ -7,15 +7,16 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
 
-public class Pathfinder : MonoBehaviour
+public class PFWiki : MonoBehaviour
 {
 
     public struct Node
     {
         public int2 coord;
         public int2 parent;
-        public int gScore;
-        public int hScore;
+        public float gScore;
+        public float hScore;
+        public float fScore;
     }
 
     Hashtable obstacles;
@@ -31,8 +32,8 @@ public class Pathfinder : MonoBehaviour
     void Start()
     {
         obstacles = new Hashtable();
-        start = new Node { coord = int2.zero, parent = int2.zero, gScore = int.MaxValue, hScore = int.MaxValue };
-        end = new Node { coord = int2.zero, parent = int2.zero, gScore = int.MaxValue, hScore = int.MaxValue };
+        start = new Node { coord = int2.zero, parent = int2.zero, gScore = float.MaxValue, hScore = float.MaxValue };
+        end = new Node { coord = int2.zero, parent = int2.zero, gScore = float.MaxValue, hScore = float.MaxValue };
     }
 
     // Update is called once per frame
@@ -233,6 +234,8 @@ public class Pathfinder : MonoBehaviour
             Node current = start;
             current.gScore = 0;
             current.hScore = SquaredDistance(current.coord, end.coord);
+            current.fScore = current.gScore + current.hScore;
+
             openSet.TryAdd(current.coord, current);
 
             offsets[0] = new int2(0, 1);
@@ -246,15 +249,14 @@ public class Pathfinder : MonoBehaviour
 
             int counter = 0;
 
-            do
+            while (openSet.Count() != 0)
             {
                 current = openSet[ClosestNode()];
-                nodes.TryAdd(current.coord, current);
+                openSet.Remove(current.coord);
 
                 for (int i = 0; i < offsets.Length; i++)
                 {
-                    if (!nodes.ContainsKey(current.coord + offsets[i]) &&
-                        !isObstacle.ContainsKey(current.coord + offsets[i]))
+                    if (!isObstacle.ContainsKey(current.coord + offsets[i]))
                     {
                         Node neighbour = new Node
                         {
@@ -265,47 +267,51 @@ public class Pathfinder : MonoBehaviour
                             hScore = SquaredDistance(current.coord + offsets[i], end.coord)
                         };
 
-                        if (openSet.ContainsKey(neighbour.coord) && neighbour.gScore <
-                            openSet[neighbour.coord].gScore)
+                        neighbour.fScore = neighbour.gScore + neighbour.hScore;
+
+                        if (!nodes.TryAdd(neighbour.coord, neighbour))
                         {
-                            openSet[neighbour.coord] = neighbour;
+                            if (neighbour.gScore <= nodes[neighbour.coord].gScore)
+                            {
+                                nodes.Remove(neighbour.coord);
+                                nodes.TryAdd(neighbour.coord, neighbour);
+                            }
                         }
-                        else if (!openSet.ContainsKey(neighbour.coord))
+
+                        if (neighbour.gScore <= nodes[neighbour.coord].gScore)
                         {
                             openSet.TryAdd(neighbour.coord, neighbour);
                         }
                     }
                 }
 
-                openSet.Remove(current.coord);
                 counter++;
 
                 if (counter > safeGuard)
                     break;
-
-            } while (openSet.Count() != 0 && !current.coord.Equals(end.coord));
+            }
         }
 
-        public int SquaredDistance(int2 coordA, int2 coordB)
+        public float SquaredDistance(int2 coordA, int2 coordB)
         {
-            int a = coordB.x - coordA.x;
-            int b = coordB.y - coordA.y;
-            return a * a + b * b;
+            float a = coordB.x - coordA.x;
+            float b = coordB.y - coordA.y;
+            return Mathf.Sqrt(a * a + b * b);
         }
 
         public int2 ClosestNode()
         {
             Node result = new Node();
-            int fScore = int.MaxValue;
+            float fScore = int.MaxValue;
 
             NativeArray<Node> nodeArray = openSet.GetValueArray(Allocator.Temp);
 
             for (int i = 0; i < nodeArray.Length; i++)
             {
-                if (nodeArray[i].gScore + nodeArray[i].hScore < fScore)
+                if (nodeArray[i].fScore <= fScore)
                 {
                     result = nodeArray[i];
-                    fScore = nodeArray[i].gScore + nodeArray[i].hScore;
+                    fScore = nodeArray[i].fScore;
                 }
             }
 

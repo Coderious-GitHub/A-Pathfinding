@@ -153,6 +153,9 @@ MonoBehaviour:
   map: {fileID: 914041239}
   defaultTile: {fileID: 11400000, guid: 06d4ae6fd62afad428de8dfff7940875, type: 2}
   cam: {fileID: 519420031}
+  tilePrefab: {fileID: 5585875541560062233, guid: 4e902046f4a88574fa5f53958b3fab9c,
+    type: 3}
+  unitSpeed: 5
 --- !u!4 &481665557
 Transform:
   m_ObjectHideFlags: 0
