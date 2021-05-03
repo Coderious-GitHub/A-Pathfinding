@@ -286,7 +286,7 @@ public class PFMulti : MonoBehaviour
 
             Node current = startNative[r];
             current.gScore = 0;
-            current.hScore = SquaredDistance(current.coord, end.coord);
+            current.hScore = Distance(current.coord, end.coord);
             current.fScore = current.gScore + current.hScore;
 
             openSet.TryAdd(current.coord, current);
@@ -324,8 +324,8 @@ public class PFMulti : MonoBehaviour
                             coord = current.coord + offsets[i],
                             parent = current.coord,
                             gScore = current.gScore +
-                                SquaredDistance(current.coord, current.coord + offsets[i]),
-                            hScore = SquaredDistance(current.coord + offsets[i], end.coord)
+                                Distance(current.coord, current.coord + offsets[i]),
+                            hScore = Distance(current.coord + offsets[i], end.coord)
                         };
 
                         neighbour.fScore = neighbour.gScore + neighbour.hScore;
@@ -366,7 +366,7 @@ public class PFMulti : MonoBehaviour
             nodes.Dispose();
         }
 
-        public float SquaredDistance(int2 coordA, int2 coordB)
+        public float Distance(int2 coordA, int2 coordB)
         {
             float a = coordB.x - coordA.x;
             float b = coordB.y - coordA.y;
